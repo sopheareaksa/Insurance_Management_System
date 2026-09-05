@@ -1,0 +1,96 @@
+@model Insurance_Management_System.ViewModels.RegisterSellerViewModel
+
+@{
+    ViewData["Title"] = "Seller / Company Registration";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white py-3">
+                    <h4 class="mb-0 fw-bold">Partner Company / Seller Registration</h4>
+                    <small>Test <code>sp_RegisterSellerCompany</code> workflow</small>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="RegisterSeller" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Account Credentials</h6>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input asp-for="Username" class="form-control" placeholder="company_admin" required />
+                                <span asp-validation-for="Username" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label">Admin Email <span class="text-danger">*</span></label>
+                                <input asp-for="Email" class="form-control" type="email" placeholder="admin@company.com" required />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Password" class="form-label">Password <span class="text-danger">*</span></label>
+                            <input asp-for="Password" class="form-control" type="password" placeholder="At least 6 characters" required />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <hr />
+
+                        <h6 class="text-secondary fw-bold text-uppercase small mb-3">Company Details</h6>
+                        <div class="mb-3">
+                            <label asp-for="CompanyName" class="form-label">Company Name <span class="text-danger">*</span></label>
+                            <input asp-for="CompanyName" class="form-control" placeholder="Acme Insurance Ltd." required />
+                            <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="CompanyEmail" class="form-label">Company Public Email <span class="text-danger">*</span></label>
+                                <input asp-for="CompanyEmail" class="form-control" type="email" placeholder="contact@acme.com" required />
+                                <span asp-validation-for="CompanyEmail" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="CompanyPhone" class="form-label">Company Phone <span class="text-danger">*</span></label>
+                                <input asp-for="CompanyPhone" class="form-control" placeholder="+1234567890" required />
+                                <span asp-validation-for="CompanyPhone" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="CompanyAddress" class="form-label">Company Address</label>
+                            <input asp-for="CompanyAddress" class="form-control" placeholder="Suite 100, Financial District" />
+                            <span asp-validation-for="CompanyAddress" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label asp-for="LeadAgentFullName" class="form-label">Lead Agent Name <span class="text-danger">*</span></label>
+                                <input asp-for="LeadAgentFullName" class="form-control" placeholder="Jane Smith" required />
+                                <span asp-validation-for="LeadAgentFullName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Branch" class="form-label">Branch Office</label>
+                                <input asp-for="Branch" class="form-control" placeholder="Main Branch" />
+                                <span asp-validation-for="Branch" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Login" class="btn btn-outline-secondary">Back to Login</a>
+                            <button type="submit" class="btn btn-success px-4">Submit Registration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
