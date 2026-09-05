@@ -1,19 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Insurance_Management_System.Models;
 using Insurance_Management_System.ViewModels;
 using Insurance_Management_System.DTOs;
+using Insurance_Management_System.Services;
 
 namespace Insurance_Management_System.Controllers;
 
 public class AuthController : Controller
 {
     private readonly InsuranceContext _context;
+    private readonly IMemoryCache _cache;
+    private readonly IEmailService _emailService;
 
-    public AuthController(InsuranceContext context)
+    public AuthController(InsuranceContext context, IMemoryCache cache, IEmailService emailService)
     {
         _context = context;
+        _cache = cache;
+        _emailService = emailService;
     }
 
     public IActionResult Index()
@@ -157,7 +163,7 @@ public class AuthController : Controller
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
         {
             TempData["ErrorMessage"] = "Please provide both Email/Username and Password.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction(nameof(Login));
         }
 
         var user = await _context.UserAccounts
@@ -166,13 +172,13 @@ public class AuthController : Controller
         if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.passwordHash))
         {
             TempData["ErrorMessage"] = "Invalid credentials. Please verify your email/username and password.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction(nameof(Login));
         }
 
         if (user.status != "Active")
         {
             TempData["ErrorMessage"] = $"Account status is '{user.status}'. Please contact administrator.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction(nameof(Login));
         }
 
         user.lastLogin = DateTime.UtcNow;
@@ -180,6 +186,136 @@ public class AuthController : Controller
 
         TempData["SuccessMessage"] = $"Welcome back, {user.username}! Signed in as {user.role}.";
         return RedirectToAction("Index", "Home");
+    }
+
+    [HttpGet]
+    public IActionResult ForgotPassword()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SendOTP(ForgotPasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View("ForgotPassword", model);
+        }
+
+        var normalizedEmail = model.Email.Trim().ToLower();
+        var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.email.ToLower() == normalizedEmail);
+        if (user == null)
+        {
+            ModelState.AddModelError(nameof(model.Email), "No account registered with this email address.");
+            return View("ForgotPassword", model);
+        }
+        string otp = Random.Shared.Next(100000, 999999).ToString();
+        string cacheKey = $"OTP_{normalizedEmail}";
+        _cache.Set(cacheKey, otp, TimeSpan.FromMinutes(5));
+
+        try
+        {
+            await _emailService.SendOtpEmailAsync(model.Email.Trim(), otp);
+            TempData["SuccessMessage"] = $"A 6-digit OTP code has been sent to {model.Email}. Please check your inbox.";
+            return RedirectToAction(nameof(VerifyOTP), new { email = model.Email.Trim() });
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, $"Failed to send email: {ex.Message}");
+            return View("ForgotPassword", model);
+        }
+    }
+
+    [HttpGet]
+    public IActionResult VerifyOTP(string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return RedirectToAction(nameof(ForgotPassword));
+        }
+
+        return View(new VerifyOtpViewModel { Email = email });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult VerifyOTP(VerifyOtpViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        string normalizedEmail = model.Email.Trim().ToLower();
+        string cacheKey = $"OTP_{normalizedEmail}";
+
+        if (_cache.TryGetValue(cacheKey, out string? cachedOtp) && cachedOtp == model.Otp.Trim())
+        {
+            _cache.Remove(cacheKey);
+            string resetToken = Guid.NewGuid().ToString("N");
+            string resetTokenKey = $"ResetAllowed_{normalizedEmail}";
+            _cache.Set(resetTokenKey, resetToken, TimeSpan.FromMinutes(10));
+
+            TempData["SuccessMessage"] = "OTP verified successfully! Please set your new password.";
+            return RedirectToAction(nameof(SetNewPassword), new { email = model.Email.Trim(), token = resetToken });
+        }
+
+        ModelState.AddModelError(nameof(model.Otp), "Invalid or expired OTP code. Please check your email or request a new code.");
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult SetNewPassword(string email, string token)
+    {
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token))
+        {
+            TempData["ErrorMessage"] = "Invalid request. Please start the password reset process again.";
+            return RedirectToAction(nameof(ForgotPassword));
+        }
+
+        string normalizedEmail = email.Trim().ToLower();
+        string resetTokenKey = $"ResetAllowed_{normalizedEmail}";
+
+        if (!_cache.TryGetValue(resetTokenKey, out string? cachedToken) || cachedToken != token)
+        {
+            TempData["ErrorMessage"] = "Password reset session has expired or is invalid. Please request a new OTP.";
+            return RedirectToAction(nameof(ForgotPassword));
+        }
+
+        return View(new SetNewPasswordViewModel { Email = email.Trim(), Token = token });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetNewPassword(SetNewPasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        string normalizedEmail = model.Email.Trim().ToLower();
+        string resetTokenKey = $"ResetAllowed_{normalizedEmail}";
+
+        if (!_cache.TryGetValue(resetTokenKey, out string? cachedToken) || cachedToken != model.Token)
+        {
+            TempData["ErrorMessage"] = "Password reset session has expired. Please request a new OTP.";
+            return RedirectToAction(nameof(ForgotPassword));
+        }
+
+        var user = await _context.UserAccounts.FirstOrDefaultAsync(u => u.email.ToLower() == normalizedEmail);
+        if (user == null)
+        {
+            TempData["ErrorMessage"] = "User account not found.";
+            return RedirectToAction(nameof(Login));
+        }
+        user.passwordHash = BCrypt.Net.BCrypt.HashPassword(model.NewPassword);
+        await _context.SaveChangesAsync();
+        _cache.Remove(resetTokenKey);
+
+        TempData["SuccessMessage"] = "Your password has been reset successfully! You can now sign in with your new password.";
+        return RedirectToAction(nameof(Login));
     }
 }
 

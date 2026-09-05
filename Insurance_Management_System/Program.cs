@@ -1,9 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Insurance_Management_System.Models;
+using Insurance_Management_System.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 builder.Services.AddDbContext<InsuranceContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
