@@ -1,0 +1,28 @@
+@model InsuranceProduct
+@{
+    ViewData["Title"] = "Add Insurance Product";
+}
+
+<div class="dashboard-shell">
+    <div class="mb-4"><a class="text-decoration-none" asp-controller="InsuranceProduct" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Back to products</a><h1 class="h2 mt-3 mb-1">Add insurance product</h1><p class="text-secondary mb-0">Store a new product in the insurance catalogue.</p></div>
+
+    <div class="dashboard-panel">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+            <div class="row g-3">
+                <div class="col-md-6"><label asp-for="Name" class="form-label">Product name</label><input asp-for="Name" class="form-control" placeholder="e.g. Family Health Cover" /><span asp-validation-for="Name" class="text-danger"></span></div>
+                <div class="col-md-6"><label asp-for="Status" class="form-label">Status</label><select asp-for="Status" class="form-select"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+                <div class="col-md-6"><label asp-for="CompanyId" class="form-label">Company</label><select asp-for="CompanyId" class="form-select" asp-items="ViewBag.CompanyId"><option value="">Select company</option></select><span asp-validation-for="CompanyId" class="text-danger"></span></div>
+                <div class="col-md-6"><label asp-for="InTypeId" class="form-label">Insurance type</label><select asp-for="InTypeId" class="form-select" asp-items="ViewBag.InTypeId"><option value="">Select insurance type</option></select><span asp-validation-for="InTypeId" class="text-danger"></span></div>
+                <div class="col-md-6"><label asp-for="BasePremium" class="form-label">Base premium</label><div class="input-group"><span class="input-group-text">$</span><input asp-for="BasePremium" class="form-control" type="number" step="0.01" min="0" /></div><span asp-validation-for="BasePremium" class="text-danger"></span></div>
+                <div class="col-12"><label asp-for="Detail" class="form-label">Details</label><textarea asp-for="Detail" class="form-control" rows="4" placeholder="Describe the coverage and key benefits"></textarea><span asp-validation-for="Detail" class="text-danger"></span></div>
+                <div class="col-12 d-flex justify-content-end gap-2 mt-4"><a class="btn btn-outline-secondary" asp-action="Index">Cancel</a><button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-2"></i>Save product</button></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
