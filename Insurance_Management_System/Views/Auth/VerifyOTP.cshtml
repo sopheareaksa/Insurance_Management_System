@@ -1,0 +1,92 @@
+@model Insurance_Management_System.ViewModels.VerifyOtpViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Verify OTP - Insurance Management System";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .otp-input {
+            letter-spacing: 12px;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                    <div class="card-header bg-success text-white text-center py-4">
+                        <div class="fs-1 mb-1">📩</div>
+                        <h3 class="fw-bold mb-1">Verify OTP</h3>
+                        <small class="text-white-50">Insurance Management System</small>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <p class="text-muted small mb-1">We sent a 6-digit code to:</p>
+                            <span class="badge bg-light text-dark border px-3 py-2 fw-semibold">@Model.Email</span>
+                        </div>
+
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success alert-dismissible fade show small" role="alert">
+                                <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
+
+                        <form asp-action="VerifyOTP" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="Email" />
+
+                            <div class="mb-4">
+                                <label asp-for="Otp" class="form-label fw-semibold text-center d-block">Enter 6-Digit Code</label>
+                                <input asp-for="Otp" type="text" maxlength="6" class="form-control form-control-lg otp-input" placeholder="••••••" required autofocus />
+                                <span asp-validation-for="Otp" class="text-danger small text-center d-block mt-1"></span>
+                                <div class="form-text text-muted text-center small mt-1">
+                                    <i class="bi bi-clock-history me-1"></i>Code expires in <strong>5 minutes</strong>.
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                                <i class="bi bi-shield-check me-1"></i> Verify Code &rarr;
+                            </button>
+                        </form>
+
+                        <hr class="my-4" />
+
+                        <div class="d-flex justify-content-between align-items-center small">
+                            <a asp-action="ForgotPassword" class="text-decoration-none text-muted">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Resend Code
+                            </a>
+                            <a asp-action="Login" class="text-decoration-none text-secondary fw-semibold">
+                                Cancel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

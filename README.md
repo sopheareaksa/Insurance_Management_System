@@ -1,0 +1,201 @@
+# Insurance Management System 🛡️
+
+A modern, robust web application for managing insurance policies, customer registrations, partner agent/company onboarding, and authentication workflows. Built with **ASP.NET Core 10 MVC**, **Entity Framework Core**, **SQL Server**, and **Bootstrap 5**.
+
+---
+
+## 📌 Table of Contents
+- [Overview](#-overview)
+- [Key Features](#-key-features)
+- [Tech Stack](#-tech-stack)
+- [Project Architecture](#-project-architecture)
+- [Database Schema & Stored Procedures](#-database-schema--stored-procedures)
+- [Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Database Configuration](#database-configuration)
+  - [Running the Application](#running-the-application)
+- [User Workflows](#-user-workflows)
+- [Contributing](#-contributing)
+- [License](#-license)
+
+---
+
+## 🚀 Overview
+
+The **Insurance Management System** streamlines the interaction between insurance providers, partner agencies/sellers, and customers. It features a standalone authentication portal with dynamic client-side role switching, automated credential forwarding, secure password hashing, and stored-procedure-backed multi-table onboarding.
+
+---
+
+## ✨ Key Features
+
+- 🔐 **Interactive Authentication & Registration Portal**:
+  - Standalone login interface that bypasses main site chrome for a distraction-free experience.
+  - Smooth client-side JavaScript toggle between **Sign In** and **Create Account**.
+  - Client-side validation for password matching, length, and mandatory fields.
+  - Role-based redirection:
+    - **Customer**: Redirects to detailed personal info registration with credentials pre-filled.
+    - **Agent / Seller**: Redirects to partner company details registration with credentials pre-filled.
+- 🔒 **Security & Cryptography**:
+  - Secure password hashing using **BCrypt.Net-Next**.
+  - Built-in Anti-Forgery Token (`[ValidateAntiForgeryToken]`) validation on all form posts.
+- 🏢 **Multi-Role Onboarding**:
+  - **Customer Registration**: Captures personal credentials, full name, phone number, address, date of birth, and National ID/Passport via `sp_RegisterCustomer`.
+  - **Company / Seller Registration**: Captures corporate contact information, branch details, lead agent identity, and auto-assigns registration codes with approval status workflows via `sp_RegisterSellerCompany`.
+- 🗄️ **Database Integration**:
+  - Entity Framework Core with singular table mappings (`UserAccount`, `Customer`, `Company`).
+  - Stored procedure execution using `SqlQueryRaw` for complex, atomic registration transactions.
+- 📱 **Responsive UI**:
+  - Clean, modern layout built on **Bootstrap 5** and **Bootstrap Icons**.
+  - Dynamic user feedback with dismissal alerts for success and error messages.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: .NET 10.0 (ASP.NET Core Web MVC)
+- **Language**: C# 13 / .NET 10
+- **Database**: Microsoft SQL Server
+- **ORM**: Entity Framework Core 10.0 (`Microsoft.EntityFrameworkCore.SqlServer`)
+- **Password Hashing**: `BCrypt.Net-Next` (v4.2.0)
+- **Frontend**: Razor Views (CSHTML), Bootstrap 5, Bootstrap Icons, JavaScript
+
+---
+
+## 📂 Project Architecture
+
+```plaintext
+Insurance_Management_System/
+├── Controllers/
+│   ├── AuthController.cs            # Login, Customer & Seller registration logic
+│   └── HomeController.cs            # Dashboard and informational pages
+├── Data/
+│   └── InsuranceContext.cs          # EF Core DbContext with model configurations
+├── DTOs/
+│   ├── CustomerRegisterResult.cs    # Result model for sp_RegisterCustomer
+│   └── SellerRegisterResult.cs      # Result model for sp_RegisterSellerCompany
+├── Models/
+│   ├── UserAccount.cs               # User authentication entity (UserAccount table)
+│   ├── Customer.cs                  # Policyholder profile entity (Customer table)
+│   ├── Company.cs                   # Partner agency profile entity (Company table)
+│   ├── InsuranceType.cs             # Insurance category entity
+│   └── ErrorViewModel.cs            # Standard error handling model
+├── ViewModels/
+│   ├── RegisterCustomerViewModel.cs # Customer registration input model & validation
+│   └── RegisterSellerViewModel.cs   # Seller/Company registration input model & validation
+├── Views/
+│   ├── Auth/
+│   │   ├── Login.cshtml             # Standalone login & dynamic role-based switcher
+│   │   ├── RegisterCustomer.cshtml  # Detailed customer profile form
+│   │   └── RegisterSeller.cshtml    # Detailed company profile form
+│   ├── Home/
+│   │   ├── Index.cshtml             # Main system dashboard
+│   │   └── Privacy.cshtml           # Privacy policy view
+│   ├── Shared/
+│   │   ├── _Layout.cshtml           # Main layout with navigation and alert banners
+│   │   └── _ValidationScriptsPartial.cshtml
+│   ├── _ViewImports.cshtml
+│   └── _ViewStart.cshtml
+├── wwwroot/                         # Static assets (CSS, JS, Bootstrap)
+├── appsettings.json                 # Connection strings and logging settings
+└── Program.cs                       # App entry point, services, and route mapping
+```
+
+---
+
+## 🗄️ Database Schema & Stored Procedures
+
+### Primary Tables
+- **`UserAccount`**: `userId`, `username`, `email`, `passwordHash`, `role`, `status`, `lastLogin`, `createdAt`
+- **`Customer`**: `customerId`, `userId` (FK), `fullName`, `address`, `phone`, `dateOfBirth`, `nationalId`
+- **`Company`**: `companyId`, `userId` (FK), `name`, `regNo`, `email`, `phone`, `address`, `isHostCompany`, `approvalStatus`, `commissionRate`, `createdAt`
+
+### Key Stored Procedures
+1. **`dbo.sp_RegisterCustomer`**:
+   - Atomically inserts a record into `UserAccount` (Role: `Customer`) and linked details into `Customer`.
+2. **`dbo.sp_RegisterSellerCompany`**:
+   - Atomically inserts a record into `UserAccount` (Role: `Agent`) and linked corporate details into `Company` with an initial `Pending` status.
+
+---
+
+## 🏁 Getting Started
+
+### Prerequisites
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download)
+- [Microsoft SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (Express or Developer Edition)
+- [SQL Server Management Studio (SSMS)](https://learn.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms) or [Azure Data Studio](https://azure.microsoft.com/en-us/products/data-studio)
+
+### Database Configuration
+1. Ensure your database `Insurance_Management_System` exists in your SQL Server instance with the tables and stored procedures.
+2. Open [`Insurance_Management_System/appsettings.json`](file:///D:/Lesson-Intern/Insurance_Management_System/Insurance_Management_System/appsettings.json) and configure your connection string:
+   ```json
+   {
+     "ConnectionStrings": {
+       "DefaultConnection": "Server=YOUR_SERVER_NAME;Database=Insurance_Management_System;User Id=YOUR_USER;Password=YOUR_PASSWORD;TrustServerCertificate=True;"
+     }
+   }
+   ```
+
+### Running the Application
+
+1. **Clone or Navigate to the Repository**:
+   ```bash
+   cd D:/Lesson-Intern/Insurance_Management_System/Insurance_Management_System
+   ```
+
+2. **Restore Dependencies & Build**:
+   ```bash
+   dotnet restore
+   dotnet build
+   ```
+
+3. **Run the Project**:
+   ```bash
+   dotnet run
+   ```
+
+4. **Access the App**:
+   Open your browser and navigate to the displayed URL (e.g. `https://localhost:7214`).
+   - The app opens directly to the **Sign In** screen.
+
+---
+
+## 🔄 User Workflows
+
+```mermaid
+flowchart TD
+    Start([Launch App / Auth/Login]) --> AuthView{User Action}
+    
+    AuthView -->|Enter Email & Password| LoginSubmit[Submit Sign In]
+    LoginSubmit --> VerifyAuth{Credentials Valid?}
+    VerifyAuth -->|Yes| Dashboard[Redirect to Home/Index\nLoad Full _Layout.cshtml]
+    VerifyAuth -->|No| LoginError[Show Error Message]
+    
+    AuthView -->|Click Register Account| DynamicSwitch[JavaScript Dynamic Switch]
+    DynamicSwitch --> InputCreds[Enter Username, Email, Password, Role]
+    
+    InputCreds --> RoleCheck{Selected Role}
+    RoleCheck -->|Customer| CustReg[Redirect to RegisterCustomer\nPrefill Username & Email]
+    RoleCheck -->|Agent| SellerReg[Redirect to RegisterSeller\nPrefill Username & Email]
+    
+    CustReg --> FillPersonal[Fill Personal Info\nFull Name, DOB, National ID, Phone]
+    FillPersonal --> ExecCustSP[Execute sp_RegisterCustomer]
+    ExecCustSP --> RegSuccess[Registration Successful -> Back to Login]
+    
+    SellerReg --> FillCompany[Fill Company Details\nCompany Name, Branch, Phone, Address]
+    FillCompany --> ExecSellerSP[Execute sp_RegisterSellerCompany]
+    ExecSellerSP --> RegSuccess
+```
+
+---
+
+## 🤝 Contributing
+Contributions are welcome! Please follow standard Git practices:
+1. Fork or branch from `main`.
+2. Commit your changes with clear messages.
+3. Submit a pull request detailing your improvements.
+
+---
+
+## 📄 License
+This project is developed for educational and internship training purposes.
+
