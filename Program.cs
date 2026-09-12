@@ -51,7 +51,7 @@ using (var scope = app.Services.CreateScope())
         {
             adminPasswordIsValid = BCrypt.Net.BCrypt.Verify("12345", admin.passwordHash);
         }
-        catch (BCrypt.Net.SaltParseException)
+        catch (BCrypt.Net.SaltParseException)https://github.com/sopheareaksa/Insurance_Management_System.git
         {
             adminPasswordIsValid = false;
         }
